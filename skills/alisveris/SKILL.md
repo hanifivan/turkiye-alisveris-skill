@@ -17,15 +17,39 @@ Alışveriş kararlarında hatalar hep aynı üç yerden geliyor:
 
 Aşağıdaki akış bu üçünü kapatmak için kurulmuştur.
 
-## Gerekli araçlar
+## 0. Ön kontrol (ilk iş, her oturumda bir kez)
 
-**Tarayıcı otomasyonu zorunludur.** Playwright MCP, Claude in Chrome ya da eşdeğeri bir araç. Bu skill'in tamamı canlı sayfa okumaya dayanıyor, tarayıcı olmadan yapabileceği hiçbir şey yok.
+Skill'in çalışması tarayıcı otomasyonuna bağlı. Eksikse en kötü senaryo "çalışmaz" değil, **sessizce yanlış çalışır**: arama sonucu özetlerinden fiyat toplayıp rapor yazarsın ve kullanıcı yanlış bilgiyle alışveriş yapar. Bunu baştan kes.
 
-Oturumda tarayıcı aracı yoksa **işe başlama.** Kullanıcıya tek cümleyle durumu söyle ve ne kurması gerektiğini belirt. Arama sonucu özetlerinden, hafızandan ya da basit bir sayfa çekme aracından fiyat üretip rapor yazma. Bu, skill'in engellemek için var olduğu hatanın ta kendisidir ve kullanıcı yanlış bilgiyle alışveriş yapar.
+İlk adım olarak şunu çalıştır:
 
-Web araması (WebSearch, Tavily ya da eşdeğeri) **opsiyoneldir**. Link verilmemiş ve aday ürün bulman gerektiğinde işe yarar. Yoksa da çalışırsın, o zaman pazaryerinin kendi arama sayfasını tarayıcıyla açarsın. Web araması yalnızca **aday listesi** çıkarmak için kullanılır, fiyat ve stok her zaman ürünün kendi sayfasından doğrulanır.
+```bash
+bash <skill-dizini>/scripts/on_kontrol.sh
+```
 
-Ayrıca: Claude in Chrome kullanılıyorsa her alan adı için ayrı izin isteniyor. Kullanıcı bir siteye izin vermediyse o siteyi atla ve raporda "bu site kontrol edilemedi" diye belirt, tahminle doldurma.
+Betik hiçbir şey kurmaz, sadece durumu raporlar. Çıktının son satırındaki `SONUC` değerine göre davran:
+
+**`calisabilir`** ise sessizce devam et, kullanıcıya rapor gösterme, akışa geç. Zaten hazır olan bir şeyi duyurmak gereksiz gürültü.
+
+**`eksik-tarayici`** ise dur ve kullanıcıya sor. Eksik olanı, ne işe yaradığını ve kurulum komutunu tek blokta ver, sonra onay iste:
+
+> Bu skill ürün sayfalarını canlı okuyor, bunun için tarayıcı otomasyonu gerekiyor ve şu an kurulu değil. Playwright MCP kuralım mı? Tek komut, API anahtarı istemiyor:
+> `claude mcp add playwright -s user -- npx @playwright/mcp@latest`
+> Kurulumdan sonra Claude Code'u bir kez yeniden başlatman gerekiyor.
+
+Kullanıcı onay verirse komutu çalıştır, vermezse ısrar etme ve işi bırak. **Onay almadan kurma.** MCP sunucusu eklemek kullanıcının yapılandırmasını değiştirir, bu senin kendi başına alacağın bir karar değil.
+
+**`claude CLI bulunamadi`** çıkarsa betik iş görmüyor demektir (Cursor ve benzeri ortamlarda olur). O zaman kendi araç listene bak: tarayıcı aracın var mı? Varsa devam et, yoksa yukarıdaki gibi kullanıcıya söyle.
+
+### Opsiyonel olan
+
+Web araması (yerleşik WebSearch, Tavily, Brave ya da eşdeğeri) **zorunlu değil**. Yalnızca link verilmediğinde aday ürün bulmaya yarar. Hiçbiri yoksa pazaryerinin kendi arama sayfasını tarayıcıyla açarsın, iş yine yürür. Eksikse kurulum önerme, boşuna kullanıcıyı meşgul etme.
+
+Web aramasından gelen fiyat ve stok bilgisi **asla rapora girmez.** Arama sadece aday listesi çıkarır, her sayı ürünün kendi sayfasından doğrulanır.
+
+### İzinler
+
+Claude in Chrome kullanılıyorsa her alan adı için ayrı izin isteniyor. Kullanıcı bir siteye izin vermediyse o siteyi atla ve raporda "bu site kontrol edilemedi" diye belirt, boşluğu tahminle doldurma.
 
 ## Akış
 
@@ -42,9 +66,28 @@ Sorulacak çekirdek küme şu. Kullanıcının zaten söylediğini tekrar sorma,
 | **Fiyat aralığı** | Tavan yoksa hangi segmentte arama yapılacağı belirsiz kalır. Alt sınır da işe yarar, çok ucuz olanı elemek için. |
 | **Marka tercihi** | Belirli bir marka isteniyor mu, yoksa açık mı, istenmeyen marka var mı. |
 | **Kullanım yeri ve sıklığı** | Salon mu dış mekan mı, günlük mü ara sıra mı, amatör mü düzenli mi. Teknik kriterleri bu belirler. |
+| **Öncelik ekseni** | Sıralamayı asıl bu belirler, aşağıda ayrı başlık var. |
 | **Olmazsa olmaz** | Renk, kargo süresi, iade kolaylığı, garanti, ikinci el kabul edilir mi. |
 
 Kullanıcıya tek tek yazdırmak yerine, aracın yapılandırılmış soru sorma imkanı varsa onu kullan ve seçenekleri hazır sun. Cevap vermek böyle çok daha hızlı olur.
+
+### Öncelik ekseni
+
+Aynı bütçe ve aynı bedenle bile iki kullanıcı farklı ürün almalı, çünkü aynı şeyi optimize etmiyorlar. Bu sorulmadan yapılan sıralama, senin neyi önemsediğini kullanıcı adına varsaymandan ibarettir. Sor:
+
+| Öncelik | Ne anlama gelir |
+|---|---|
+| **En ucuz** | Temel işi görsün yeter. Sıralama toplam maliyete göre, teknik farklar sadece bilgi olarak aktarılır. |
+| **Fiyat karşılığı** | Birim fiyat başına en çok değer. Varsayılan budur, kullanıcı bir şey söylemediyse bunu varsay ve raporda varsaydığını belirt. |
+| **En iyi performans** | Kullanım amacına teknik olarak en uygun olan. Fiyat bütçe tavanına kadar ikinci plandadır. |
+| **Dayanıklılık** | Uzun ömür ve tamir edilebilirlik öncelikli. Malzeme kalitesi, yedek parça bulunabilirliği, garanti süresi öne çıkar. |
+| **Marka ve görünüm** | Görünürlük ve marka değeri öncelikli. Bunu küçümseme, hediye alımlarında ve gençlerde gerçek bir kriterdir. |
+
+Öncelik sıralamayı değiştirir ama **elemeyi değiştirmez**. Beden tutmuyorsa ürün hangi eksende olursa olsun elenir.
+
+Raporda hangi eksene göre sıraladığını tek cümleyle yaz. Kullanıcı ekseni değiştirmek isterse sıralamanın neden değiştiğini anlaması gerekir, yoksa aynı veriden farklı sonuç çıkması keyfi görünür.
+
+**Ömür beklentisi ile öncelik çelişebilir.** Ürün kısa sürede elden çıkacaksa (büyüyen çocuğun ayakkabısı, geçici kullanım) yüksek performans ve dayanıklılık için ödenen fark geri dönmez. Böyle bir durum görürsen kullanıcının seçtiği ekseni uygulamaya devam et, ama çelişkiyi tek cümleyle söyle. Karar kullanıcınındır, uyarmak senin işin.
 
 Bir kriter kararı değiştirmiyorsa sorma. Üç ilanın üçü de aynı modelse "nerede kullanacaksın" sorusu boşa gider. Ama bir ilan salon tabanlı diğeri sokak tabanlıysa o soru kararın kendisidir.
 
@@ -98,7 +141,9 @@ Kategori listede yoksa çekirdek akışla devam et ve raporda "bu kategoriye öz
 - Stokta yok
 - Olmazsa olmaz bir koşulu karşılamıyor (garanti yok, kargo süresi tutmuyor)
 
-Kalanları toplam maliyet ve kategori kriterleriyle sırala. Marka itibarı tek başına sıralama gerekçesi değildir, pahalı olması da kaliteli olduğu anlamına gelmez. Neyin karşılığında ne kadar fazla ödendiğini somut yaz.
+Kalanları **öncelik eksenine göre** sırala. Eksen "en ucuz" ise toplam maliyet belirleyicidir, "en iyi performans" ise kategori kriterleri öne geçer, "fiyat karşılığı" ise ikisinin oranına bakılır.
+
+Marka itibarı tek başına sıralama gerekçesi değildir, pahalı olması da kaliteli olduğu anlamına gelmez. İki ürün arasındaki fiyat farkının **ne satın aldığını** somut yaz: "900 TL fazlası daha hafif taban ve daha iyi tutuş getiriyor" gibi. Fark neyin karşılığı olduğu yazılmazsa kullanıcı kendi kararını veremez.
 
 ### 7. Raporu yaz
 
@@ -106,6 +151,8 @@ Kalanları toplam maliyet ve kategori kriterleriyle sırala. Marka itibarı tek 
 
 ```
 [Tek cümlelik sonuç: hangisi ve neden]
+
+[Hangi öncelik eksenine göre sıralandığı, tek cümle. Varsayıldıysa varsayıldığı belirtilir.]
 
 [Her ürün için kısa bir paragraf: fiyat, güçlü yan, zayıf yan, kime uyar]
 
@@ -115,6 +162,8 @@ Kalanları toplam maliyet ve kategori kriterleriyle sırala. Marka itibarı tek 
 ```
 
 Tablo, yalnızca üç ve üzeri ürün karşılaştırılıyorsa ve karşılaştırılan alanlar gerçekten paralelse kullanılır. İki ürün için düz paragraf daha okunur.
+
+Sonunda ekseni değiştirmenin mümkün olduğunu hatırlat, tek cümle yeter. Kullanıcı çoğu zaman önceliğini ancak ilk sonucu gördükten sonra netleştirir, ikinci turu ucuzlatmış olursun.
 
 Kullanıcı satın alma işlemi istemedikçe sepete ekleme, sipariş verme, hiçbir forma bilgi girme. Bu skill karar verir, alışveriş yapmaz.
 
