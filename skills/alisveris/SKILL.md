@@ -163,6 +163,14 @@ Marka itibarı tek başına sıralama gerekçesi değildir, pahalı olması da k
 
 Tablo, yalnızca üç ve üzeri ürün karşılaştırılıyorsa ve karşılaştırılan alanlar gerçekten paralelse kullanılır. İki ürün için düz paragraf daha okunur.
 
+**Her ürünün linkini ver.** Bu isteğe bağlı bir süs değil, raporun işe yarar olmasının şartı. Link yoksa kullanıcı senin bulduğun ürünü baştan aramak zorunda kalıyor ve yaptığın işin yarısı çöpe gidiyor. Kurallar:
+
+- Link, ürünün **kendi sayfası** olacak, arama sonucu sayfası ya da kategori sayfası değil.
+- Tarayıcıda açtığın **gerçek URL'yi** ver, kullanıcının sana verdiği kısa linki değil. Takip parametrelerini (`?boutiqueId`, `utm_`, `adjust_`, `link_userID` ve benzeri) temizle, çıplak ürün adresini bırak.
+- Belirli bir renk ya da varyant inceledeysen bunu linkin yanında belirt, çünkü aynı modelin başka varyantı farklı fiyatta ve farklı bedenlerde olabilir.
+- Elenen ürünlerin linkini de ver. Kullanıcı senin kararına katılmayabilir, kendi gözüyle bakmak isteyebilir.
+- Linki ürün adının üstüne markdown bağlantısı olarak koy, çıplak URL satırı raporu okunmaz hale getirir.
+
 Sonunda ekseni değiştirmenin mümkün olduğunu hatırlat, tek cümle yeter. Kullanıcı çoğu zaman önceliğini ancak ilk sonucu gördükten sonra netleştirir, ikinci turu ucuzlatmış olursun.
 
 Kullanıcı satın alma işlemi istemedikçe sepete ekleme, sipariş verme, hiçbir forma bilgi girme. Bu skill karar verir, alışveriş yapmaz.
