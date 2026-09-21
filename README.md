@@ -21,7 +21,9 @@ Skill bu üçünü kapatmak için kuruldu. Uydurma bir kontrol listesi değil, g
 - [Playwright MCP](https://github.com/microsoft/playwright-mcp), ya da
 - Claude in Chrome eklentisi, ya da eşdeğeri bir tarayıcı aracı
 
-Tarayıcı aracı yoksa skill işe başlamaz, durumu söyleyip durur. Bu bilinçli bir tercih: arama sonucu özetlerinden fiyat üretmek, skill'in engellemek için var olduğu hatanın ta kendisi.
+Kurulu değilse elle uğraşman gerekmiyor. Skill her oturumda önce `scripts/on_kontrol.sh` betiğini çalıştırıp ortamı kendisi kontrol ediyor. Eksik varsa neyin eksik olduğunu, ne işe yaradığını ve kurulum komutunu söyleyip **onay istiyor**. Onay vermezsen kurmuyor, çünkü MCP sunucusu eklemek senin yapılandırmanı değiştirir. Her şey yerindeyse hiçbir şey demeden işe koyuluyor.
+
+Tarayıcı aracı yoksa ve kurmak istemezsen skill işe başlamaz, durumu söyleyip durur. Bu bilinçli bir tercih: arama sonucu özetlerinden fiyat üretmek, skill'in engellemek için var olduğu hatanın ta kendisi.
 
 **Web araması opsiyonel.** WebSearch, [Tavily MCP](https://github.com/tavily-ai/tavily-mcp) ya da eşdeğeri. Link verilmemişken aday ürün bulmak için işe yarar. Yoksa skill pazaryerinin kendi arama sayfasını tarayıcıyla açar. Aday listesi çıkarmak dışında kullanılmaz, fiyat ve stok her zaman ürünün kendi sayfasından doğrulanır.
 
@@ -50,7 +52,23 @@ https://ty.gl/xxxxx bunu inceler misin
 11 yaşında bir çocuğa 5 bin TL bütçeyle salon için basketbol ayakkabısı arıyorum
 ```
 
-Skill önce eksik kriterleri tek blokta sorar (beden, kim kullanacak, fiyat aralığı, marka tercihi, kullanım yeri, olmazsa olmaz), sonra ilanları açıp doğrular ve raporu yazar.
+Skill önce eksik kriterleri tek blokta sorar, sonra ilanları açıp doğrular ve raporu yazar. Sorulan çekirdek küme: beden veya ölçü, kim kullanacak, fiyat aralığı, marka tercihi, kullanım yeri ve sıklığı, öncelik ekseni, olmazsa olmaz koşullar.
+
+## Öncelik ekseni
+
+Aynı bütçe ve aynı bedenle bile iki kullanıcı farklı ürün almalı, çünkü aynı şeyi optimize etmiyorlar. Skill bunu sorar ve sıralamayı ona göre kurar:
+
+| Öncelik | Sıralamayı nasıl değiştirir |
+|---|---|
+| En ucuz | Toplam maliyet belirleyici, teknik farklar sadece bilgi |
+| Fiyat karşılığı | Birim fiyat başına değer. Varsayılan bu, varsayıldığında raporda belirtilir |
+| En iyi performans | Kategori kriterleri öne geçer, fiyat bütçe tavanına kadar ikinci planda |
+| Dayanıklılık | Malzeme, yedek parça bulunabilirliği, garanti süresi öne çıkar |
+| Marka ve görünüm | Marka değeri öncelikli. Hediye alımlarında gerçek bir kriter |
+
+Öncelik sıralamayı değiştirir, **elemeyi değiştirmez.** Beden tutmuyorsa ürün hangi eksende olursa olsun elenir.
+
+Rapor hangi eksene göre sıralandığını yazar, çünkü aynı veriden farklı sonuç çıkması aksi halde keyfi görünür. Ürün kısa sürede elden çıkacaksa (büyüyen çocuğun ayakkabısı gibi) yüksek performans için ödenen farkın geri dönmeyeceğini de söyler, ama kararı kullanıcıya bırakır.
 
 ## Nasıl karar veriyor
 
